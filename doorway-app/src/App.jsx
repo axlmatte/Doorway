@@ -1,7 +1,9 @@
-import { Component, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
 import OnboardingScreen from './screens/OnboardingScreen';
 import AuthScreen from './screens/AuthScreen';
 import ExploreScreen from './screens/ExploreScreen';
+
+const ACCOUNTS_STORAGE_KEY = 'doorway_accounts';
 
 class ScreenErrorBoundary extends Component {
   constructor(props) {
@@ -59,6 +61,30 @@ class ScreenErrorBoundary extends Component {
 export default function App() {
   const [screen, setScreen] = useState('onboarding');
   const [user, setUser] = useState(null);
+
+  // Strip any pre-made/demo accounts on launch; keep only real user-created accounts
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const userCreatedOnly = parsed.filter(
+          (acc) =>
+            acc &&
+            acc.email &&
+            acc.email !== 'alex@doorway.app' &&
+            acc.isDemo !== true
+        );
+        localStorage.setItem(
+          ACCOUNTS_STORAGE_KEY,
+          JSON.stringify(userCreatedOnly)
+        );
+      }
+    } catch {
+      localStorage.removeItem(ACCOUNTS_STORAGE_KEY);
+    }
+  }, []);
 
   const goToAuth = () => setScreen('auth');
 
